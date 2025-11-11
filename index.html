@@ -284,6 +284,145 @@
             font-size: 1.1em;
         }
 
+        .ratio-visualization {
+            background: white;
+            padding: 25px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 2px solid #667eea;
+        }
+
+        .ratio-visualization h4 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .number-line-container {
+            position: relative;
+            margin: 40px 0;
+        }
+
+        .number-line {
+            position: relative;
+            height: 60px;
+            background: linear-gradient(to right, #e9ecef 0%, #e9ecef 100%);
+            border-radius: 4px;
+        }
+
+        .number-line-axis {
+            position: absolute;
+            bottom: -25px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            color: #6c757d;
+        }
+
+        .ratio-point {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #667eea;
+            border-radius: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .ratio-point:hover {
+            width: 16px;
+            height: 16px;
+            background: #764ba2;
+            z-index: 10;
+        }
+
+        .ratio-point-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            margin-bottom: 8px;
+        }
+
+        .ratio-point:hover .ratio-point-tooltip {
+            opacity: 1;
+        }
+
+        .target-marker {
+            position: absolute;
+            width: 3px;
+            height: 80px;
+            background: #28a745;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+        }
+
+        .target-marker::before {
+            content: '🎯';
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5em;
+        }
+
+        .target-marker::after {
+            content: 'Target';
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8em;
+            color: #28a745;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            color: #495057;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #667eea;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .legend-line {
+            width: 3px;
+            height: 20px;
+            background: #28a745;
+        }
+
         .distances-section {
             background: white;
             padding: 20px;
@@ -592,7 +731,6 @@
         }
 
         function calculateRatiosForGearSet(gears, maxDistance, maxDistances, targetRatio) {
-            // Calculate all possible distances
             const distanceToPairs = new Map();
 
             for (let i = 0; i < gears.length; i++) {
@@ -611,7 +749,6 @@
                 }
             }
 
-            // Sort by number of pairs and take top N
             const sortedDistances = Array.from(distanceToPairs.entries())
                 .sort((a, b) => b[1].length - a[1].length)
                 .slice(0, maxDistances);
@@ -622,11 +759,12 @@
                 gears: gears, 
                 canAchieveTarget: false,
                 closestRatio: null,
-                targetMatches: []
+                targetMatches: [],
+                allRatioValues: []
             };
 
-            // Calculate ONLY single-stage ratios
             const allRatios = new Set();
+            const allRatioValues = [];
             const targetMatches = [];
             let closestRatio = null;
             let closestDiff = Infinity;
@@ -634,14 +772,14 @@
             sortedDistances.forEach(([dist, pairs]) => {
                 pairs.forEach(([g1, g2]) => {
                     if (g1 !== g2) {
-                        // Two orientations for each pair
-                        const r1 = g2 / g1;  // g2 driven by g1
-                        const r2 = g1 / g2;  // g1 driven by g2
+                        const r1 = g2 / g1;
+                        const r2 = g1 / g2;
 
                         allRatios.add(r1.toFixed(6));
                         allRatios.add(r2.toFixed(6));
+                        allRatioValues.push(r1);
+                        allRatioValues.push(r2);
 
-                        // Check for target match (within 0.5% tolerance)
                         const tolerance = 0.005;
                         if (Math.abs(r1 - targetRatio) < targetRatio * tolerance) {
                             targetMatches.push({
@@ -658,7 +796,6 @@
                             });
                         }
 
-                        // Track closest
                         if (Math.abs(r1 - targetRatio) < closestDiff) {
                             closestDiff = Math.abs(r1 - targetRatio);
                             closestRatio = r1;
@@ -668,8 +805,8 @@
                             closestRatio = r2;
                         }
                     } else {
-                        // Same gear (1:1 ratio)
                         allRatios.add('1.000000');
+                        allRatioValues.push(1.0);
                         if (Math.abs(1.0 - targetRatio) < closestDiff) {
                             closestDiff = Math.abs(1.0 - targetRatio);
                             closestRatio = 1.0;
@@ -685,7 +822,6 @@
                 });
             });
 
-            // Sort target matches by error
             targetMatches.sort((a, b) => a.error - b.error);
 
             return {
@@ -694,7 +830,8 @@
                 gears: gears,
                 canAchieveTarget: targetMatches.length > 0,
                 closestRatio: closestRatio,
-                targetMatches: targetMatches.slice(0, 10), // Top 10 closest matches
+                targetMatches: targetMatches.slice(0, 10),
+                allRatioValues: [...new Set(allRatioValues.map(r => r.toFixed(6)))].map(r => parseFloat(r)).sort((a, b) => a - b),
                 score: targetMatches.length > 0 ? (1000 + allRatios.size) : allRatios.size
             };
         }
@@ -736,14 +873,12 @@
 
             await new Promise(resolve => setTimeout(resolve, 100));
 
-            // Run greedy algorithm multiple times with different starting points to find top 3
             const results = [];
 
             for (let attempt = 0; attempt < 5; attempt++) {
                 const selected = [];
                 const remaining = [...availableGears];
 
-                // Try different starting gears
                 const startIdx = Math.floor((attempt / 5) * remaining.length);
                 selected.push(remaining[startIdx]);
                 remaining.splice(startIdx, 1);
@@ -780,10 +915,8 @@
             progressFill.style.width = '100%';
             progressFill.textContent = '100%';
 
-            // Sort by score and get top 3 unique
             results.sort((a, b) => b.score - a.score);
 
-            // Remove duplicates based on gear sets
             const uniqueResults = [];
             const seenGearSets = new Set();
 
@@ -819,6 +952,13 @@
                     (Math.abs(result.closestRatio - targetRatio) / targetRatio * 100).toFixed(2) : 
                     'N/A';
 
+                // Calculate range for number line
+                const minRatio = Math.min(...result.allRatioValues);
+                const maxRatio = Math.max(...result.allRatioValues);
+                const rangeMargin = (maxRatio - minRatio) * 0.1;
+                const displayMin = Math.max(0.01, minRatio - rangeMargin);
+                const displayMax = maxRatio + rangeMargin;
+
                 html += `
                     <div class="result-card">
                         <h2>${index === 0 ? '🏆' : '⭐'} Option #${index + 1}</h2>
@@ -853,6 +993,40 @@
                             <h4>🛒 Gears to Purchase</h4>
                             <div class="gear-badges">
                                 ${result.gears.map(g => `<span class="gear-badge">${g}T</span>`).join('')}
+                            </div>
+                        </div>
+
+                        <div class="ratio-visualization">
+                            <h4>📊 Ratio Distribution Visualization</h4>
+                            <div class="number-line-container">
+                                <div class="number-line">
+                                    ${targetRatio >= displayMin && targetRatio <= displayMax ? 
+                                        `<div class="target-marker" style="left: ${((targetRatio - displayMin) / (displayMax - displayMin) * 100).toFixed(2)}%"></div>` 
+                                        : ''}
+                                    ${result.allRatioValues.map(ratio => {
+                                        const position = ((ratio - displayMin) / (displayMax - displayMin) * 100).toFixed(2);
+                                        return `
+                                            <div class="ratio-point" style="left: ${position}%">
+                                                <div class="ratio-point-tooltip">${ratio.toFixed(3)}</div>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                                <div class="number-line-axis">
+                                    <span>${displayMin.toFixed(2)}</span>
+                                    <span>${((displayMin + displayMax) / 2).toFixed(2)}</span>
+                                    <span>${displayMax.toFixed(2)}</span>
+                                </div>
+                            </div>
+                            <div class="legend">
+                                <div class="legend-item">
+                                    <div class="legend-dot"></div>
+                                    <span>Available Ratio</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-line"></div>
+                                    <span>Target Ratio (${targetRatio.toFixed(2)})</span>
+                                </div>
                             </div>
                         </div>
 
