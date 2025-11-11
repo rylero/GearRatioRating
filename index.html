@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimal Gear Set Finder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .control-section {
+            margin-bottom: 25px;
+        }
+
+        .control-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .input-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+        }
+
+        .input-box-highlight {
+            border: 3px solid #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        }
+
+        .input-label {
+            display: block;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .input-description {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1em;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            transition: border 0.2s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .gear-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            border: 2px solid #e9ecef;
+            transition: all 0.2s;
+        }
+
+        .checkbox-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 8px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            cursor: pointer;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .calculate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .calculate-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .select-all-btn, .clear-all-btn {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .select-all-btn:hover, .clear-all-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .info-banner {
+            background: #e7f3ff;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-banner-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #495057;
+        }
+
+        .info-icon {
+            font-size: 1.5em;
+        }
+
+        .results {
+            padding: 30px;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .result-card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        .result-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .info-value-success {
+            color: #28a745;
+        }
+
+        .info-value-small {
+            font-size: 1.1em;
+        }
+
+        .gear-list {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .gear-list h4 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .gear-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .gear-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .distances-section {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .distances-section h4 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .distance-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 3px solid #667eea;
+        }
+
+        .distance-header {
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .pair-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .pair-item {
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: 500;
+            border: 1px solid #e9ecef;
+            font-size: 0.9em;
+        }
+
+        .target-ratio-section {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 2px solid #28a745;
+        }
+
+        .target-ratio-section h4 {
+            color: #28a745;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .ratio-match {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .ratio-match-header {
+            font-weight: 700;
+            color: #28a745;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .ratio-match-detail {
+            color: #495057;
+            font-size: 0.95em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 1.2em;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+            font-size: 1.1em;
+        }
+
+        .progress-bar {
+            background: #e9ecef;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .preset-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            padding: 8px 16px;
+            font-size: 0.9em;
+            background: #f8f9fa;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Optimal Gear Set Finder</h1>
+            <p class="subtitle">Find the best single-stage gear combinations to achieve your target gear ratio</p>
+        </header>
+
+        <div class="controls">
+            <div class="control-section">
+                <h3>Target Gear Ratio</h3>
+                <div class="input-grid">
+                    <div class="input-box input-box-highlight">
+                        <label class="input-label">⭐ Desired Gear Ratio</label>
+                        <p class="input-description">Target ratio for single-stage (e.g., 6.75 for a shooter)</p>
+                        <input type="number" id="target-ratio" value="6.75" min="0.1" max="100" step="0.01">
+                        <div class="preset-buttons">
+                            <button class="preset-btn" onclick="setTargetRatio(1)">1:1</button>
+                            <button class="preset-btn" onclick="setTargetRatio(3)">3:1</button>
+                            <button class="preset-btn" onclick="setTargetRatio(6.75)">6.75:1</button>
+                            <button class="preset-btn" onclick="setTargetRatio(10)">10:1</button>
+                            <button class="preset-btn" onclick="setTargetRatio(15)">15:1</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>Optimization Parameters</h3>
+                <div class="input-grid">
+                    <div class="input-box">
+                        <label class="input-label">Max Number of Gear Sizes</label>
+                        <p class="input-description">How many different gear sizes to buy</p>
+                        <input type="number" id="max-gear-sizes" value="10" min="2" max="43">
+                    </div>
+                    <div class="input-box">
+                        <label class="input-label">Max Center Distance (inches)</label>
+                        <p class="input-description">Maximum center-to-center distance allowed</p>
+                        <input type="number" id="max-distance" value="5.0" min="0.5" max="10" step="0.1">
+                    </div>
+                    <div class="input-box">
+                        <label class="input-label">Max Unique Distances</label>
+                        <p class="input-description">Maximum number of different center distances</p>
+                        <input type="number" id="max-distances" value="3" min="1" max="10">
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>Available Gears (Select Pool to Choose From)</h3>
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+                    <div>
+                        <h4 style="color: #495057; margin-bottom: 10px;">SplineXS Gears</h4>
+                        <div class="gear-checkboxes" id="splinexs-checkboxes"></div>
+                    </div>
+                    <div>
+                        <h4 style="color: #495057; margin-bottom: 10px;">Hex Bore Gears</h4>
+                        <div class="gear-checkboxes" id="hexbore-checkboxes"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="info-banner" style="display: none;" class="info-banner">
+                <div class="info-banner-content">
+                    <span class="info-icon">ℹ️</span>
+                    <span id="info-text"></span>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="select-all-btn" onclick="selectAll()">Select All</button>
+                <button class="clear-all-btn" onclick="clearAll()">Clear All</button>
+                <button class="calculate-btn" id="calc-btn" onclick="calculate()">Find Optimal Gear Set</button>
+            </div>
+
+            <div id="progress-container" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="no-results">
+                👆 Set your target ratio and click "Find Optimal Gear Set" to see top 3 recommendations
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DP = 20;
+
+        const splinexsTeeth = [8, 9, 10, 11, 12, 13, 14, 15, 16];
+        const hexboreTeeth = [18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84];
+
+        function diameter(teeth) {
+            return teeth / DP;
+        }
+
+        function setTargetRatio(ratio) {
+            document.getElementById('target-ratio').value = ratio;
+        }
+
+        function initCheckboxes() {
+            const splinexsContainer = document.getElementById('splinexs-checkboxes');
+            const hexboreContainer = document.getElementById('hexbore-checkboxes');
+
+            splinexsTeeth.forEach(teeth => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item';
+                div.innerHTML = `
+                    <input type="checkbox" id="splinexs-${teeth}" value="${teeth}" checked>
+                    <label for="splinexs-${teeth}">${teeth}T</label>
+                `;
+                splinexsContainer.appendChild(div);
+            });
+
+            hexboreTeeth.forEach(teeth => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item';
+                div.innerHTML = `
+                    <input type="checkbox" id="hexbore-${teeth}" value="${teeth}" checked>
+                    <label for="hexbore-${teeth}">${teeth}T</label>
+                `;
+                hexboreContainer.appendChild(div);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initCheckboxes);
+
+        function selectAll() {
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+        }
+
+        function clearAll() {
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        }
+
+        function getSelectedGears() {
+            const selected = [];
+            document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+                selected.push(parseInt(cb.value));
+            });
+            return selected.sort((a, b) => a - b);
+        }
+
+        function showInfo(message) {
+            const banner = document.getElementById('info-banner');
+            const text = document.getElementById('info-text');
+            text.textContent = message;
+            banner.style.display = 'block';
+        }
+
+        function hideInfo() {
+            document.getElementById('info-banner').style.display = 'none';
+        }
+
+        function calculateRatiosForGearSet(gears, maxDistance, maxDistances, targetRatio) {
+            // Calculate all possible distances
+            const distanceToPairs = new Map();
+
+            for (let i = 0; i < gears.length; i++) {
+                for (let j = i; j < gears.length; j++) {
+                    const gear1 = gears[i];
+                    const gear2 = gears[j];
+                    const distance = diameter(gear1) + diameter(gear2);
+
+                    if (distance <= maxDistance) {
+                        const distKey = distance.toFixed(4);
+                        if (!distanceToPairs.has(distKey)) {
+                            distanceToPairs.set(distKey, []);
+                        }
+                        distanceToPairs.get(distKey).push([gear1, gear2]);
+                    }
+                }
+            }
+
+            // Sort by number of pairs and take top N
+            const sortedDistances = Array.from(distanceToPairs.entries())
+                .sort((a, b) => b[1].length - a[1].length)
+                .slice(0, maxDistances);
+
+            if (sortedDistances.length === 0) return { 
+                ratios: 0, 
+                distances: [], 
+                gears: gears, 
+                canAchieveTarget: false,
+                closestRatio: null,
+                targetMatches: []
+            };
+
+            // Calculate ONLY single-stage ratios
+            const allRatios = new Set();
+            const targetMatches = [];
+            let closestRatio = null;
+            let closestDiff = Infinity;
+
+            sortedDistances.forEach(([dist, pairs]) => {
+                pairs.forEach(([g1, g2]) => {
+                    if (g1 !== g2) {
+                        // Two orientations for each pair
+                        const r1 = g2 / g1;  // g2 driven by g1
+                        const r2 = g1 / g2;  // g1 driven by g2
+
+                        allRatios.add(r1.toFixed(6));
+                        allRatios.add(r2.toFixed(6));
+
+                        // Check for target match (within 0.5% tolerance)
+                        const tolerance = 0.005;
+                        if (Math.abs(r1 - targetRatio) < targetRatio * tolerance) {
+                            targetMatches.push({
+                                ratio: r1,
+                                config: `${g2}T driven / ${g1}T driver`,
+                                error: Math.abs(r1 - targetRatio)
+                            });
+                        }
+                        if (Math.abs(r2 - targetRatio) < targetRatio * tolerance) {
+                            targetMatches.push({
+                                ratio: r2,
+                                config: `${g1}T driven / ${g2}T driver`,
+                                error: Math.abs(r2 - targetRatio)
+                            });
+                        }
+
+                        // Track closest
+                        if (Math.abs(r1 - targetRatio) < closestDiff) {
+                            closestDiff = Math.abs(r1 - targetRatio);
+                            closestRatio = r1;
+                        }
+                        if (Math.abs(r2 - targetRatio) < closestDiff) {
+                            closestDiff = Math.abs(r2 - targetRatio);
+                            closestRatio = r2;
+                        }
+                    } else {
+                        // Same gear (1:1 ratio)
+                        allRatios.add('1.000000');
+                        if (Math.abs(1.0 - targetRatio) < closestDiff) {
+                            closestDiff = Math.abs(1.0 - targetRatio);
+                            closestRatio = 1.0;
+                        }
+                        if (Math.abs(1.0 - targetRatio) < targetRatio * 0.005) {
+                            targetMatches.push({
+                                ratio: 1.0,
+                                config: `${g1}T driven / ${g1}T driver`,
+                                error: 0
+                            });
+                        }
+                    }
+                });
+            });
+
+            // Sort target matches by error
+            targetMatches.sort((a, b) => a.error - b.error);
+
+            return {
+                ratios: allRatios.size,
+                distances: sortedDistances,
+                gears: gears,
+                canAchieveTarget: targetMatches.length > 0,
+                closestRatio: closestRatio,
+                targetMatches: targetMatches.slice(0, 10), // Top 10 closest matches
+                score: targetMatches.length > 0 ? (1000 + allRatios.size) : allRatios.size
+            };
+        }
+
+        async function calculate() {
+            const resultsDiv = document.getElementById('results');
+            const calcBtn = document.getElementById('calc-btn');
+            const progressContainer = document.getElementById('progress-container');
+            const progressFill = document.getElementById('progress-fill');
+
+            hideInfo();
+
+            const availableGears = getSelectedGears();
+            const maxGearSizes = parseInt(document.getElementById('max-gear-sizes').value);
+            const maxDistance = parseFloat(document.getElementById('max-distance').value);
+            const maxDistances = parseInt(document.getElementById('max-distances').value);
+            const targetRatio = parseFloat(document.getElementById('target-ratio').value);
+
+            if (availableGears.length < 2) {
+                resultsDiv.innerHTML = '<div class="no-results">⚠️ Please select at least 2 gears</div>';
+                return;
+            }
+
+            if (maxGearSizes > availableGears.length) {
+                resultsDiv.innerHTML = `<div class="no-results">⚠️ Max gear sizes (${maxGearSizes}) cannot exceed available gears (${availableGears.length})</div>`;
+                return;
+            }
+
+            if (maxGearSizes < 2) {
+                resultsDiv.innerHTML = '<div class="no-results">⚠️ Max gear sizes must be at least 2</div>';
+                return;
+            }
+
+            calcBtn.disabled = true;
+            progressContainer.style.display = 'block';
+            resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div>Finding optimal single-stage gear combinations for target ratio ' + targetRatio.toFixed(2) + '...</div>';
+
+            showInfo(`Searching for gear sets that can achieve ratio ${targetRatio.toFixed(2)}:1 with single-stage gearing...`);
+
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Run greedy algorithm multiple times with different starting points to find top 3
+            const results = [];
+
+            for (let attempt = 0; attempt < 5; attempt++) {
+                const selected = [];
+                const remaining = [...availableGears];
+
+                // Try different starting gears
+                const startIdx = Math.floor((attempt / 5) * remaining.length);
+                selected.push(remaining[startIdx]);
+                remaining.splice(startIdx, 1);
+
+                for (let i = 1; i < maxGearSizes; i++) {
+                    let bestGear = null;
+                    let bestScore = 0;
+
+                    for (let gear of remaining) {
+                        const testSet = [...selected, gear].sort((a, b) => a - b);
+                        const result = calculateRatiosForGearSet(testSet, maxDistance, maxDistances, targetRatio);
+
+                        if (result.score > bestScore) {
+                            bestScore = result.score;
+                            bestGear = gear;
+                        }
+                    }
+
+                    if (bestGear !== null) {
+                        selected.push(bestGear);
+                        remaining.splice(remaining.indexOf(bestGear), 1);
+                        selected.sort((a, b) => a - b);
+                    }
+                }
+
+                const result = calculateRatiosForGearSet(selected, maxDistance, maxDistances, targetRatio);
+                results.push(result);
+
+                progressFill.style.width = `${((attempt + 1) / 5 * 100).toFixed(1)}%`;
+                progressFill.textContent = `${((attempt + 1) / 5 * 100).toFixed(1)}%`;
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+
+            progressFill.style.width = '100%';
+            progressFill.textContent = '100%';
+
+            // Sort by score and get top 3 unique
+            results.sort((a, b) => b.score - a.score);
+
+            // Remove duplicates based on gear sets
+            const uniqueResults = [];
+            const seenGearSets = new Set();
+
+            for (let result of results) {
+                const gearSetKey = result.gears.join(',');
+                if (!seenGearSets.has(gearSetKey)) {
+                    seenGearSets.add(gearSetKey);
+                    uniqueResults.push(result);
+                    if (uniqueResults.length >= 3) break;
+                }
+            }
+
+            displayResults(uniqueResults, targetRatio);
+
+            calcBtn.disabled = false;
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+            }, 1000);
+        }
+
+        function displayResults(results, targetRatio) {
+            const resultsDiv = document.getElementById('results');
+
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<div class="no-results">⚠️ No valid gear combinations found</div>';
+                return;
+            }
+
+            let html = '';
+
+            results.forEach((result, index) => {
+                const errorPercent = result.closestRatio ? 
+                    (Math.abs(result.closestRatio - targetRatio) / targetRatio * 100).toFixed(2) : 
+                    'N/A';
+
+                html += `
+                    <div class="result-card">
+                        <h2>${index === 0 ? '🏆' : '⭐'} Option #${index + 1}</h2>
+                        <div class="result-info">
+                            <div class="info-item">
+                                <div class="info-label">Target Ratio</div>
+                                <div class="info-value info-value-small">${targetRatio.toFixed(3)}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Can Achieve?</div>
+                                <div class="info-value info-value-small ${result.canAchieveTarget ? 'info-value-success' : ''}">${result.canAchieveTarget ? '✓ YES' : '✗ NO'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Closest Ratio</div>
+                                <div class="info-value info-value-small">${result.closestRatio ? result.closestRatio.toFixed(3) : 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Error</div>
+                                <div class="info-value info-value-small">${errorPercent}%</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Gear Sizes</div>
+                                <div class="info-value info-value-small">${result.gears.length}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Single-Stage Ratios</div>
+                                <div class="info-value info-value-small">${result.ratios}</div>
+                            </div>
+                        </div>
+
+                        <div class="gear-list">
+                            <h4>🛒 Gears to Purchase</h4>
+                            <div class="gear-badges">
+                                ${result.gears.map(g => `<span class="gear-badge">${g}T</span>`).join('')}
+                            </div>
+                        </div>
+
+                        ${result.targetMatches.length > 0 ? `
+                            <div class="target-ratio-section">
+                                <h4>✅ Ways to Achieve Target Ratio (${targetRatio.toFixed(2)})</h4>
+                                ${result.targetMatches.map(match => `
+                                    <div class="ratio-match">
+                                        <div class="ratio-match-header">
+                                            Ratio: ${match.ratio.toFixed(4)} (Error: ${(match.error / targetRatio * 100).toFixed(3)}%)
+                                        </div>
+                                        <div class="ratio-match-detail">
+                                            ${match.config}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : `
+                            <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                                <strong style="color: #856404;">⚠️ Cannot achieve target ratio exactly</strong><br>
+                                <span style="color: #856404;">Closest achievable: ${result.closestRatio ? result.closestRatio.toFixed(4) : 'N/A'}</span>
+                            </div>
+                        `}
+
+                        <div class="distances-section">
+                            <h4>📏 Available Center Distances</h4>
+                            ${result.distances.map(([dist, pairs]) => `
+                                <div class="distance-item">
+                                    <div class="distance-header">
+                                        ${dist}" (${(parseFloat(dist) * DP).toFixed(1)} teeth) - ${pairs.length} pairs
+                                    </div>
+                                    <div class="pair-list">
+                                        ${pairs.map(([g1, g2]) => `<div class="pair-item">${g1}T + ${g2}T</div>`).join('')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            resultsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
