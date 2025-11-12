@@ -44,6 +44,61 @@
             opacity: 0.9;
         }
 
+        .algorithm-explanation {
+            background: #e7f3ff;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 30px;
+        }
+
+        .algorithm-explanation h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .algorithm-explanation p {
+            color: #495057;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .algorithm-steps {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+
+        .algorithm-step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            color: #495057;
+            flex: 1;
+        }
+
         .controls {
             padding: 30px;
             background: #f8f9fa;
@@ -91,7 +146,7 @@
             margin-bottom: 10px;
         }
 
-        input[type="number"] {
+        input[type="number"], select {
             width: 100%;
             padding: 12px;
             font-size: 1.1em;
@@ -100,9 +155,14 @@
             transition: border 0.2s;
         }
 
-        input[type="number"]:focus {
+        input[type="number"]:focus, select:focus {
             outline: none;
             border-color: #667eea;
+        }
+
+        select {
+            background: white;
+            cursor: pointer;
         }
 
         .gear-checkboxes {
@@ -294,8 +354,15 @@
 
         .ratio-visualization h4 {
             color: #667eea;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             font-size: 1.2em;
+        }
+
+        .scale-note {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-bottom: 20px;
+            font-style: italic;
         }
 
         .number-line-container {
@@ -581,16 +648,53 @@
             <p class="subtitle">Find the best single-stage gear combinations to achieve your target gear ratio</p>
         </header>
 
+        <div class="algorithm-explanation">
+            <h3>💡 How The Algorithm Works (Uniform Coverage Mode)</h3>
+            <p><strong>First priority: Hit your target ratio.</strong> The algorithm only considers gear sets that can achieve your target (within 0.5% tolerance).</p>
+
+            <div class="algorithm-steps">
+                <div class="algorithm-step">
+                    <div class="step-number">1</div>
+                    <div class="step-text"><strong>Start with one gear:</strong> Pick a middle-sized gear as a starting point</div>
+                </div>
+                <div class="algorithm-step">
+                    <div class="step-number">2</div>
+                    <div class="step-text"><strong>Try adding each remaining gear:</strong> Test what happens if we add each available gear to our set</div>
+                </div>
+                <div class="algorithm-step">
+                    <div class="step-number">3</div>
+                    <div class="step-text"><strong>Filter by target:</strong> Only keep sets that can hit your target ratio (or just above it)</div>
+                </div>
+                <div class="algorithm-step">
+                    <div class="step-number">4</div>
+                    <div class="step-text"><strong>Score by uniformity:</strong> Among sets that hit target, pick the one with most even spacing</div>
+                </div>
+                <div class="algorithm-step">
+                    <div class="step-number">5</div>
+                    <div class="step-text"><strong>Repeat:</strong> Keep adding gears, always prioritizing target-hitting sets with best uniformity</div>
+                </div>
+            </div>
+
+            <p style="margin-top: 15px;"><strong>Result:</strong> You get gear sets that CAN hit your target ratio AND have the most uniform coverage from 1:1 to target!</p>
+        </div>
+
         <div class="controls">
             <div class="control-section">
-                <h3>Target Gear Ratio</h3>
+                <h3>Optimization Goal</h3>
                 <div class="input-grid">
                     <div class="input-box input-box-highlight">
-                        <label class="input-label">⭐ Desired Gear Ratio</label>
-                        <p class="input-description">Target ratio for single-stage</p>
-                        <input type="number" id="target-ratio" value="6.75" min="0.1" max="100" step="0.01">
+                        <label class="input-label">🎯 Optimization Mode</label>
+                        <p class="input-description">What should the algorithm optimize for?</p>
+                        <select id="optimization-mode" onchange="updateOptimizationUI()">
+                            <option value="target">Hit Specific Target Ratio</option>
+                            <option value="uniform">Uniform + Target (Best Spacing)</option>
+                        </select>
+                    </div>
+                    <div class="input-box input-box-highlight">
+                        <label class="input-label">⭐ Target Ratio</label>
+                        <p class="input-description" id="target-description">Target ratio for single-stage (e.g., 6.75 for a shooter)</p>
+                        <input type="number" id="target-ratio" value="6.75" min="1.01" max="100" step="0.01">
                         <div class="preset-buttons">
-                            <button class="preset-btn" onclick="setTargetRatio(1)">1:1</button>
                             <button class="preset-btn" onclick="setTargetRatio(3)">3:1</button>
                             <button class="preset-btn" onclick="setTargetRatio(6.75)">6.75:1</button>
                             <button class="preset-btn" onclick="setTargetRatio(10)">10:1</button>
@@ -676,6 +780,17 @@
             document.getElementById('target-ratio').value = ratio;
         }
 
+        function updateOptimizationUI() {
+            const mode = document.getElementById('optimization-mode').value;
+            const description = document.getElementById('target-description');
+
+            if (mode === 'uniform') {
+                description.textContent = 'Must-hit target ratio (will find sets with best uniform spacing that hit this)';
+            } else {
+                description.textContent = 'Target ratio for single-stage (e.g., 6.75 for a shooter)';
+            }
+        }
+
         function initCheckboxes() {
             const splinexsContainer = document.getElementById('splinexs-checkboxes');
             const hexboreContainer = document.getElementById('hexbore-checkboxes');
@@ -730,7 +845,31 @@
             document.getElementById('info-banner').style.display = 'none';
         }
 
-        function calculateRatiosForGearSet(gears, maxDistance, maxDistances, targetRatio) {
+        function calculateUniformityScore(ratios, targetRatio) {
+            // Filter ratios between 1 and target
+            const inRange = ratios.filter(r => r >= 1.0 && r <= targetRatio).sort((a, b) => a - b);
+
+            if (inRange.length < 2) return 0;
+
+            // Calculate gaps between consecutive ratios
+            const gaps = [];
+            for (let i = 1; i < inRange.length; i++) {
+                gaps.push(inRange[i] - inRange[i-1]);
+            }
+
+            // Calculate coefficient of variation (lower is more uniform)
+            const mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+            const variance = gaps.reduce((sum, gap) => sum + Math.pow(gap - mean, 2), 0) / gaps.length;
+            const stdDev = Math.sqrt(variance);
+            const cv = stdDev / mean;
+
+            // Score is inversely related to CV, and weighted by number of ratios
+            const uniformityScore = (1 / (1 + cv)) * inRange.length;
+
+            return uniformityScore;
+        }
+
+        function calculateRatiosForGearSet(gears, maxDistance, maxDistances, targetRatio, optimizationMode) {
             const distanceToPairs = new Map();
 
             for (let i = 0; i < gears.length; i++) {
@@ -760,7 +899,9 @@
                 canAchieveTarget: false,
                 closestRatio: null,
                 targetMatches: [],
-                allRatioValues: []
+                allRatioValues: [],
+                uniformityScore: 0,
+                score: -Infinity
             };
 
             const allRatios = new Set();
@@ -824,15 +965,34 @@
 
             targetMatches.sort((a, b) => a.error - b.error);
 
+            const uniqueRatios = [...new Set(allRatioValues.map(r => r.toFixed(6)))].map(r => parseFloat(r));
+            const uniformityScore = calculateUniformityScore(uniqueRatios, targetRatio);
+            const canAchieveTarget = targetMatches.length > 0;
+
+            let score;
+            if (optimizationMode === 'uniform') {
+                // MUST hit target. If it doesn't, score is very negative
+                if (!canAchieveTarget) {
+                    score = -1000000;
+                } else {
+                    // Among sets that hit target, rank by uniformity
+                    score = uniformityScore * 100;
+                }
+            } else {
+                // Original mode: prioritize hitting target
+                score = canAchieveTarget ? (1000 + allRatios.size) : allRatios.size;
+            }
+
             return {
                 ratios: allRatios.size,
                 distances: sortedDistances,
                 gears: gears,
-                canAchieveTarget: targetMatches.length > 0,
+                canAchieveTarget: canAchieveTarget,
                 closestRatio: closestRatio,
                 targetMatches: targetMatches.slice(0, 10),
-                allRatioValues: [...new Set(allRatioValues.map(r => r.toFixed(6)))].map(r => parseFloat(r)).sort((a, b) => a - b),
-                score: targetMatches.length > 0 ? (1000 + allRatios.size) : allRatios.size
+                allRatioValues: uniqueRatios.sort((a, b) => a - b),
+                uniformityScore: uniformityScore,
+                score: score
             };
         }
 
@@ -849,6 +1009,7 @@
             const maxDistance = parseFloat(document.getElementById('max-distance').value);
             const maxDistances = parseInt(document.getElementById('max-distances').value);
             const targetRatio = parseFloat(document.getElementById('target-ratio').value);
+            const optimizationMode = document.getElementById('optimization-mode').value;
 
             if (availableGears.length < 2) {
                 resultsDiv.innerHTML = '<div class="no-results">⚠️ Please select at least 2 gears</div>';
@@ -865,11 +1026,18 @@
                 return;
             }
 
+            if (targetRatio <= 1.0) {
+                resultsDiv.innerHTML = '<div class="no-results">⚠️ Target ratio must be greater than 1.0</div>';
+                return;
+            }
+
             calcBtn.disabled = true;
             progressContainer.style.display = 'block';
-            resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div>Finding optimal single-stage gear combinations for target ratio ' + targetRatio.toFixed(2) + '...</div>';
 
-            showInfo(`Searching for gear sets that can achieve ratio ${targetRatio.toFixed(2)}:1 with single-stage gearing...`);
+            const modeText = optimizationMode === 'uniform' ? 'uniform coverage that hits' : 'target ratio';
+            resultsDiv.innerHTML = `<div class="loading"><div class="spinner"></div>Finding optimal single-stage gear combinations for ${modeText} ${targetRatio.toFixed(2)}...</div>`;
+
+            showInfo(`Optimizing for ${optimizationMode === 'uniform' ? 'uniform coverage (must hit target)' : 'target ratio'} ${targetRatio.toFixed(2)}:1...`);
 
             await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -885,11 +1053,11 @@
 
                 for (let i = 1; i < maxGearSizes; i++) {
                     let bestGear = null;
-                    let bestScore = 0;
+                    let bestScore = -Infinity;
 
                     for (let gear of remaining) {
                         const testSet = [...selected, gear].sort((a, b) => a - b);
-                        const result = calculateRatiosForGearSet(testSet, maxDistance, maxDistances, targetRatio);
+                        const result = calculateRatiosForGearSet(testSet, maxDistance, maxDistances, targetRatio, optimizationMode);
 
                         if (result.score > bestScore) {
                             bestScore = result.score;
@@ -904,7 +1072,7 @@
                     }
                 }
 
-                const result = calculateRatiosForGearSet(selected, maxDistance, maxDistances, targetRatio);
+                const result = calculateRatiosForGearSet(selected, maxDistance, maxDistances, targetRatio, optimizationMode);
                 results.push(result);
 
                 progressFill.style.width = `${((attempt + 1) / 5 * 100).toFixed(1)}%`;
@@ -929,7 +1097,7 @@
                 }
             }
 
-            displayResults(uniqueResults, targetRatio);
+            displayResults(uniqueResults, targetRatio, optimizationMode);
 
             calcBtn.disabled = false;
             setTimeout(() => {
@@ -937,12 +1105,21 @@
             }, 1000);
         }
 
-        function displayResults(results, targetRatio) {
+        function displayResults(results, targetRatio, optimizationMode) {
             const resultsDiv = document.getElementById('results');
 
             if (results.length === 0) {
                 resultsDiv.innerHTML = '<div class="no-results">⚠️ No valid gear combinations found</div>';
                 return;
+            }
+
+            // Filter out results that can't hit target in uniform mode
+            if (optimizationMode === 'uniform') {
+                results = results.filter(r => r.canAchieveTarget);
+                if (results.length === 0) {
+                    resultsDiv.innerHTML = '<div class="no-results">⚠️ No gear combinations can hit the target ratio. Try increasing max center distance or selecting more gears.</div>';
+                    return;
+                }
             }
 
             let html = '';
@@ -952,12 +1129,27 @@
                     (Math.abs(result.closestRatio - targetRatio) / targetRatio * 100).toFixed(2) : 
                     'N/A';
 
-                // Calculate range for number line
+                // Use logarithmic scale
                 const minRatio = Math.min(...result.allRatioValues);
                 const maxRatio = Math.max(...result.allRatioValues);
-                const rangeMargin = (maxRatio - minRatio) * 0.1;
-                const displayMin = Math.max(0.01, minRatio - rangeMargin);
-                const displayMax = maxRatio + rangeMargin;
+                const logMin = Math.log10(minRatio);
+                const logMax = Math.log10(maxRatio);
+                const logRange = logMax - logMin;
+
+                const logMargin = logRange * 0.1;
+                const displayLogMin = logMin - logMargin;
+                const displayLogMax = logMax + logMargin;
+                const displayMin = Math.pow(10, displayLogMin);
+                const displayMax = Math.pow(10, displayLogMax);
+
+                const axisLabels = [];
+                const logMid = (displayLogMin + displayLogMax) / 2;
+                axisLabels.push(displayMin.toFixed(2));
+                axisLabels.push(Math.pow(10, logMid).toFixed(2));
+                axisLabels.push(displayMax.toFixed(2));
+
+                // Calculate ratios in range
+                const ratiosInRange = result.allRatioValues.filter(r => r >= 1.0 && r <= targetRatio).length;
 
                 html += `
                     <div class="result-card">
@@ -971,20 +1163,31 @@
                                 <div class="info-label">Can Achieve?</div>
                                 <div class="info-value info-value-small ${result.canAchieveTarget ? 'info-value-success' : ''}">${result.canAchieveTarget ? '✓ YES' : '✗ NO'}</div>
                             </div>
-                            <div class="info-item">
-                                <div class="info-label">Closest Ratio</div>
-                                <div class="info-value info-value-small">${result.closestRatio ? result.closestRatio.toFixed(3) : 'N/A'}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Error</div>
-                                <div class="info-value info-value-small">${errorPercent}%</div>
-                            </div>
+                            ${optimizationMode === 'uniform' ? `
+                                <div class="info-item">
+                                    <div class="info-label">Uniformity Score</div>
+                                    <div class="info-value info-value-small info-value-success">${result.uniformityScore.toFixed(2)}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Ratios (1-Target)</div>
+                                    <div class="info-value info-value-small">${ratiosInRange}</div>
+                                </div>
+                            ` : `
+                                <div class="info-item">
+                                    <div class="info-label">Closest Ratio</div>
+                                    <div class="info-value info-value-small">${result.closestRatio ? result.closestRatio.toFixed(3) : 'N/A'}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Error</div>
+                                    <div class="info-value info-value-small">${errorPercent}%</div>
+                                </div>
+                            `}
                             <div class="info-item">
                                 <div class="info-label">Gear Sizes</div>
                                 <div class="info-value info-value-small">${result.gears.length}</div>
                             </div>
                             <div class="info-item">
-                                <div class="info-label">Single-Stage Ratios</div>
+                                <div class="info-label">Total Ratios</div>
                                 <div class="info-value info-value-small">${result.ratios}</div>
                             </div>
                         </div>
@@ -997,25 +1200,24 @@
                         </div>
 
                         <div class="ratio-visualization">
-                            <h4>📊 Ratio Distribution Visualization</h4>
+                            <h4>📊 Ratio Distribution (Logarithmic Scale)</h4>
+                            <p class="scale-note">Using log scale: equal visual spacing represents equal ratio multiplication (e.g., 1→2 same distance as 5→10)</p>
                             <div class="number-line-container">
                                 <div class="number-line">
                                     ${targetRatio >= displayMin && targetRatio <= displayMax ? 
-                                        `<div class="target-marker" style="left: ${((targetRatio - displayMin) / (displayMax - displayMin) * 100).toFixed(2)}%"></div>` 
+                                        `<div class="target-marker" style="left: ${((Math.log10(targetRatio) - displayLogMin) / (displayLogMax - displayLogMin) * 100).toFixed(2)}%"></div>` 
                                         : ''}
                                     ${result.allRatioValues.map(ratio => {
-                                        const position = ((ratio - displayMin) / (displayMax - displayMin) * 100).toFixed(2);
+                                        const logPos = (Math.log10(ratio) - displayLogMin) / (displayLogMax - displayLogMin) * 100;
                                         return `
-                                            <div class="ratio-point" style="left: ${position}%">
+                                            <div class="ratio-point" style="left: ${logPos.toFixed(2)}%">
                                                 <div class="ratio-point-tooltip">${ratio.toFixed(3)}</div>
                                             </div>
                                         `;
                                     }).join('')}
                                 </div>
                                 <div class="number-line-axis">
-                                    <span>${displayMin.toFixed(2)}</span>
-                                    <span>${((displayMin + displayMax) / 2).toFixed(2)}</span>
-                                    <span>${displayMax.toFixed(2)}</span>
+                                    ${axisLabels.map(label => `<span>${label}</span>`).join('')}
                                 </div>
                             </div>
                             <div class="legend">
@@ -1044,12 +1246,7 @@
                                     </div>
                                 `).join('')}
                             </div>
-                        ` : `
-                            <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
-                                <strong style="color: #856404;">⚠️ Cannot achieve target ratio exactly</strong><br>
-                                <span style="color: #856404;">Closest achievable: ${result.closestRatio ? result.closestRatio.toFixed(4) : 'N/A'}</span>
-                            </div>
-                        `}
+                        ` : ''}
 
                         <div class="distances-section">
                             <h4>📏 Available Center Distances</h4>
