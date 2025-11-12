@@ -167,15 +167,15 @@
 
         .gear-checkboxes {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             gap: 10px;
             margin-top: 10px;
         }
 
         .checkbox-item {
             display: flex;
-            align-items: center;
-            padding: 8px;
+            flex-direction: column;
+            padding: 10px;
             background: white;
             border-radius: 6px;
             border: 2px solid #e9ecef;
@@ -185,6 +185,12 @@
         .checkbox-item:hover {
             border-color: #667eea;
             box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
         }
 
         .checkbox-item input[type="checkbox"] {
@@ -198,6 +204,33 @@
             cursor: pointer;
             font-weight: 500;
             color: #495057;
+            flex: 1;
+        }
+
+        .stock-input-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stock-label {
+            font-size: 0.85em;
+            color: #6c757d;
+            white-space: nowrap;
+        }
+
+        .stock-input {
+            width: 60px;
+            padding: 6px;
+            font-size: 0.95em;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stock-input:focus {
+            outline: none;
+            border-color: #667eea;
         }
 
         .button-group {
@@ -312,8 +345,52 @@
             color: #28a745;
         }
 
+        .info-value-warning {
+            color: #ffc107;
+        }
+
         .info-value-small {
             font-size: 1.1em;
+        }
+
+        .stock-status {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 2px solid #28a745;
+        }
+
+        .stock-status h4 {
+            color: #28a745;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .stock-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .stock-summary-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stock-summary-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .stock-summary-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #28a745;
         }
 
         .gear-list {
@@ -342,6 +419,28 @@
             border-radius: 20px;
             font-weight: 600;
             font-size: 1.1em;
+            position: relative;
+        }
+
+        .gear-badge-in-stock {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .gear-badge-stock-indicator {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #28a745;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .ratio-visualization {
@@ -726,7 +825,7 @@
             </div>
 
             <div class="control-section">
-                <h3>Available Gears (Select Pool to Choose From)</h3>
+                <h3>Available Gears (Select Pool & Set Stock Quantities)</h3>
                 <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
                     <div>
                         <h4 style="color: #495057; margin-bottom: 10px;">SplineXS Gears</h4>
@@ -799,8 +898,14 @@
                 const div = document.createElement('div');
                 div.className = 'checkbox-item';
                 div.innerHTML = `
-                    <input type="checkbox" id="splinexs-${teeth}" value="${teeth}" checked>
-                    <label for="splinexs-${teeth}">${teeth}T</label>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="splinexs-${teeth}" value="${teeth}" checked>
+                        <label for="splinexs-${teeth}">${teeth}T</label>
+                    </div>
+                    <div class="stock-input-container">
+                        <span class="stock-label">Stock:</span>
+                        <input type="number" class="stock-input" id="stock-splinexs-${teeth}" value="0" min="0" max="999">
+                    </div>
                 `;
                 splinexsContainer.appendChild(div);
             });
@@ -809,8 +914,14 @@
                 const div = document.createElement('div');
                 div.className = 'checkbox-item';
                 div.innerHTML = `
-                    <input type="checkbox" id="hexbore-${teeth}" value="${teeth}" checked>
-                    <label for="hexbore-${teeth}">${teeth}T</label>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="hexbore-${teeth}" value="${teeth}" checked>
+                        <label for="hexbore-${teeth}">${teeth}T</label>
+                    </div>
+                    <div class="stock-input-container">
+                        <span class="stock-label">Stock:</span>
+                        <input type="number" class="stock-input" id="stock-hexbore-${teeth}" value="0" min="0" max="999">
+                    </div>
                 `;
                 hexboreContainer.appendChild(div);
             });
@@ -834,6 +945,19 @@
             return selected.sort((a, b) => a - b);
         }
 
+        function getStockQuantity(teeth) {
+            const splinexsInput = document.getElementById(`stock-splinexs-${teeth}`);
+            const hexboreInput = document.getElementById(`stock-hexbore-${teeth}`);
+
+            if (splinexsInput) {
+                return parseInt(splinexsInput.value) || 0;
+            }
+            if (hexboreInput) {
+                return parseInt(hexboreInput.value) || 0;
+            }
+            return 0;
+        }
+
         function showInfo(message) {
             const banner = document.getElementById('info-banner');
             const text = document.getElementById('info-text');
@@ -846,24 +970,20 @@
         }
 
         function calculateUniformityScore(ratios, targetRatio) {
-            // Filter ratios between 1 and target
             const inRange = ratios.filter(r => r >= 1.0 && r <= targetRatio).sort((a, b) => a - b);
 
             if (inRange.length < 2) return 0;
 
-            // Calculate gaps between consecutive ratios
             const gaps = [];
             for (let i = 1; i < inRange.length; i++) {
                 gaps.push(inRange[i] - inRange[i-1]);
             }
 
-            // Calculate coefficient of variation (lower is more uniform)
             const mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
             const variance = gaps.reduce((sum, gap) => sum + Math.pow(gap - mean, 2), 0) / gaps.length;
             const stdDev = Math.sqrt(variance);
             const cv = stdDev / mean;
 
-            // Score is inversely related to CV, and weighted by number of ratios
             const uniformityScore = (1 / (1 + cv)) * inRange.length;
 
             return uniformityScore;
@@ -971,15 +1091,12 @@
 
             let score;
             if (optimizationMode === 'uniform') {
-                // MUST hit target. If it doesn't, score is very negative
                 if (!canAchieveTarget) {
                     score = -1000000;
                 } else {
-                    // Among sets that hit target, rank by uniformity
                     score = uniformityScore * 100;
                 }
             } else {
-                // Original mode: prioritize hitting target
                 score = canAchieveTarget ? (1000 + allRatios.size) : allRatios.size;
             }
 
@@ -1113,7 +1230,6 @@
                 return;
             }
 
-            // Filter out results that can't hit target in uniform mode
             if (optimizationMode === 'uniform') {
                 results = results.filter(r => r.canAchieveTarget);
                 if (results.length === 0) {
@@ -1128,6 +1244,11 @@
                 const errorPercent = result.closestRatio ? 
                     (Math.abs(result.closestRatio - targetRatio) / targetRatio * 100).toFixed(2) : 
                     'N/A';
+
+                // Calculate stock info
+                const gearsInStock = result.gears.filter(g => getStockQuantity(g) > 0);
+                const gearsToBuy = result.gears.filter(g => getStockQuantity(g) === 0);
+                const stockPercentage = (gearsInStock.length / result.gears.length * 100).toFixed(0);
 
                 // Use logarithmic scale
                 const minRatio = Math.min(...result.allRatioValues);
@@ -1148,7 +1269,6 @@
                 axisLabels.push(Math.pow(10, logMid).toFixed(2));
                 axisLabels.push(displayMax.toFixed(2));
 
-                // Calculate ratios in range
                 const ratiosInRange = result.allRatioValues.filter(r => r >= 1.0 && r <= targetRatio).length;
 
                 html += `
@@ -1192,10 +1312,32 @@
                             </div>
                         </div>
 
+                        <div class="stock-status">
+                            <h4>📦 Inventory Status</h4>
+                            <div class="stock-summary">
+                                <div class="stock-summary-item">
+                                    <div class="stock-summary-label">Gears in Stock</div>
+                                    <div class="stock-summary-value">${gearsInStock.length} / ${result.gears.length}</div>
+                                </div>
+                                <div class="stock-summary-item">
+                                    <div class="stock-summary-label">Stock Coverage</div>
+                                    <div class="stock-summary-value ${stockPercentage >= 75 ? '' : 'info-value-warning'}">${stockPercentage}%</div>
+                                </div>
+                                <div class="stock-summary-item">
+                                    <div class="stock-summary-label">Need to Buy</div>
+                                    <div class="stock-summary-value ${gearsToBuy.length === 0 ? '' : 'info-value-warning'}">${gearsToBuy.length}</div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="gear-list">
-                            <h4>🛒 Gears to Purchase</h4>
+                            <h4>🛒 Gears Required (${gearsInStock.length} in stock, ${gearsToBuy.length} to buy)</h4>
                             <div class="gear-badges">
-                                ${result.gears.map(g => `<span class="gear-badge">${g}T</span>`).join('')}
+                                ${result.gears.map(g => {
+                                    const stock = getStockQuantity(g);
+                                    const inStock = stock > 0;
+                                    return `<span class="gear-badge ${inStock ? 'gear-badge-in-stock' : ''}">${g}T${inStock ? `<span class="gear-badge-stock-indicator">${stock}</span>` : ''}</span>`;
+                                }).join('')}
                             </div>
                         </div>
 
